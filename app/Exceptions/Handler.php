@@ -2,7 +2,9 @@
 
 namespace App\Exceptions;
 
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -26,5 +28,25 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             //
         });
+    }
+
+    protected function invalidJson($request, ValidationException $exception): \Symfony\Component\HttpFoundation\Response
+    {
+        return response()->json([
+            'responseCode' => 'VALIDATION_422',
+            'responseMessage' => 'The given data was invalid.',
+            'data' => [
+                'errors' => $exception->errors(),
+            ],
+        ], $exception->status);
+    }
+
+    protected function unauthenticated($request, AuthenticationException $exception): \Symfony\Component\HttpFoundation\Response
+    {
+        return response()->json([
+            'responseCode' => 'AUTH_401',
+            'responseMessage' => 'Unauthenticated.',
+            'data' => null,
+        ], 401);
     }
 }

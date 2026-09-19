@@ -2,6 +2,11 @@
 
 return [
 
+    'machine_client' => [
+        'id' => env('MACHINE_CLIENT_ID'),
+        'secret' => env('MACHINE_CLIENT_SECRET'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

@@ -2,8 +2,9 @@
 
 namespace Database\Seeders;
 
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\ApiClient;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -12,11 +13,20 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // \App\Models\User::factory(10)->create();
+        $clientId = env('MACHINE_CLIENT_ID');
+        $clientSecret = env('MACHINE_CLIENT_SECRET');
 
-        // \App\Models\User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
+        if (! $clientId || ! $clientSecret) {
+            return;
+        }
+
+        ApiClient::updateOrCreate(
+            ['client_id' => $clientId],
+            [
+                'name' => 'MyDuitGW Machine Client',
+                'client_secret' => Hash::make($clientSecret),
+                'is_active' => true,
+            ]
+        );
     }
 }

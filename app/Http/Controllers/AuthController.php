@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ApiClient;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -10,6 +11,7 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
@@ -19,14 +21,13 @@ class AuthController extends Controller
         $user = User::create($validated);
         $token = $user->createToken('android')->plainTextToken;
 
-        return response()->json([
-            'message' => 'Registration successful.',
+        return $this->successResponse('Registration successful.', [
             'user' => $user,
             'token' => $token,
         ], 201);
     }
 
-    public function login(Request $request)
+    public function getToken(Request $request)
     {
         $validated = $request->validate([
             'email' => ['required', 'email'],
@@ -36,30 +37,58 @@ class AuthController extends Controller
         $user = User::where('email', $validated['email'])->first();
 
         if (! $user || ! Hash::check($validated['password'], $user->password)) {
-            return response()->json([
-                'message' => 'The provided credentials are incorrect.',
-            ], 401);
+            return $this->errorResponse(
+                'AUTH_001',
+                'The provided credentials are incorrect.',
+                401
+            );
         }
 
-        return response()->json([
-            'message' => 'Login successful.',
+        return $this->successResponse('Token generated successfully.', [
             'user' => $user,
             'token' => $user->createToken('android')->plainTextToken,
         ]);
     }
 
+    public function getClientToken(Request $request)
+    {
+        $validated = $request->validate([
+            'client_id' => ['required', 'string'],
+            'client_secret' => ['required', 'string'],
+        ]);
+
+        $client = ApiClient::where('client_id', $validated['client_id'])
+            ->where('is_active', true)
+            ->first();
+
+        if (! $client || ! Hash::check($validated['client_secret'], $client->client_secret)) {
+            return $this->errorResponse('CLIENT_401', 'Invalid client credentials.', 401);
+        }
+
+        return $this->successResponse('Machine token generated successfully.', [
+            'token' => $client->createToken('machine')->plainTextToken,
+            'token_type' => 'Bearer',
+        ]);
+    }
+
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $token = $request->user()->currentAccessToken();
 
-        return response()->json([
-            'message' => 'Logout successful.',
-        ]);
+        if ($token) {
+            $token->delete();
+        }
+
+        return $this->successResponse('Logout successful.');
     }
 
     public function me(Request $request)
     {
-        return response()->json([
+        if (! $request->user() instanceof User) {
+            return $this->errorResponse('AUTH_403', 'User token required.', 403);
+        }
+
+        return $this->successResponse('Profile retrieved successfully.', [
             'user' => $request->user(),
         ]);
     }
