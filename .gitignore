@@ -20,3 +20,4 @@ yarn-error.log
 MYDUITGW.TXT
 postman
 BACKEND_GUIDE.md
+.env-prod

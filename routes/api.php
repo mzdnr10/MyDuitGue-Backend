@@ -11,6 +11,7 @@ use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/system-status', [SystemStatusController::class, 'index']);
+Route::get('/health', [SystemStatusController::class, 'index']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/gettoken', [AuthController::class, 'getToken']);
 Route::post('/gettoken/client', [AuthController::class, 'getClientToken']);
