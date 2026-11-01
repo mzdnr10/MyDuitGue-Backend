@@ -29,7 +29,8 @@ class ApiAuthenticationTest extends TestCase
                 'responseCode',
                 'responseMessage',
                 'data' => ['user', 'token'],
-            ]);
+            ])
+            ->assertJsonPath('data.user.role', 'user');
 
         $loginResponse = $this->postJson('/api/gettoken', [
             'email' => $credentials['email'],
@@ -86,6 +87,9 @@ class ApiAuthenticationTest extends TestCase
                 'responseMessage',
                 'data' => ['token', 'token_type'],
             ]);
+
+        $this->assertDatabaseMissing('api_clients', ['client_secret' => 'test-secret']);
+        $this->assertArrayNotHasKey('client_secret', $response->json('data'));
 
         $this->withHeader('Authorization', 'Bearer ' . $response->json('data.token'))
             ->getJson('/api/me')
