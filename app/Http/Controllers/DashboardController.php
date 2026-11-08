@@ -26,6 +26,11 @@ class DashboardController extends Controller
             ])->values();
 
         return $this->successResponse('Dashboard retrieved successfully.', [
+            'user_data' => $user->only([
+                'id',
+                'name',
+                'avatar',
+            ]),
             'balance' => $income - $expense,
             'income' => $income,
             'expense' => $expense,

@@ -10,6 +10,14 @@ use App\Http\Controllers\SystemStatusController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
+// Route::get('/debug', function () {
+//     return response()->json([
+//         'database' => DB::select('SELECT DATABASE() AS db')[0]->db,
+//         'users_count' => DB::table('users')->count(),
+//         'latest_user' => DB::table('users')->latest('id')->first(),
+//     ]);
+// });
+
 Route::get('/system-status', [SystemStatusController::class, 'index']);
 Route::get('/health', [SystemStatusController::class, 'index']);
 
@@ -20,7 +28,7 @@ Route::post('/auth/google', [AuthController::class, 'google']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/me', [AuthController::class, 'me']);
     Route::get('/profile', [AuthController::class, 'me']);
     Route::match(['put', 'patch'], '/profile', [AuthController::class, 'updateProfile']);
     Route::middleware('role:user,staff,admin')->group(function () {
