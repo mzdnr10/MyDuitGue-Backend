@@ -12,22 +12,16 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        // Total pemasukan dan pengeluaran
-        $transactions = $user->transactions()->get([
-            'amount',
-            'type',
-            'transaction_date'
-        ]);
-
+        // LOGIC EXISTING - TIDAK DIUBAH
+        $transactions = $user->transactions()->get(['amount', 'type', 'transaction_date']);
         $income = $transactions->where('type', 'income')->sum('amount');
         $expense = $transactions->where('type', 'expense')->sum('amount');
 
-        // Ringkasan 6 bulan terakhir
-        $start = Carbon::now();
+        $start = Carbon::now()->startOfMonth();
 
         $monthly = $user->transactions()
             ->whereBetween('transaction_date', [
-                $start->copy()->startOfMonth()->subMonths(5)->toDateString(),
+                $start->copy()->subMonths(5)->toDateString(),
                 Carbon::now()->endOfMonth()->toDateString()
             ])
             ->get(['amount', 'type', 'transaction_date'])
@@ -38,14 +32,14 @@ class DashboardController extends Controller
                 'expense' => $items->where('type', 'expense')->sum('amount'),
             ])->values();
 
+
+        // TAMBAHAN - WEEKLY GROWTH
         $thisWeekStart = Carbon::now()->startOfWeek(Carbon::MONDAY);
         $thisWeekEnd = Carbon::now()->endOfWeek(Carbon::SUNDAY);
 
-        // Tentukan periode minggu lalu
         $lastWeekStart = $thisWeekStart->copy()->subWeek();
         $lastWeekEnd = $thisWeekEnd->copy()->subWeek();
 
-        // Hitung pemasukan minggu ini
         $thisWeekIncome = $user->transactions()
             ->where('type', 'income')
             ->whereBetween('transaction_date', [
@@ -54,7 +48,6 @@ class DashboardController extends Controller
             ])
             ->sum('amount');
 
-        // Hitung pemasukan minggu lalu
         $lastWeekIncome = $user->transactions()
             ->where('type', 'income')
             ->whereBetween('transaction_date', [
@@ -63,7 +56,6 @@ class DashboardController extends Controller
             ])
             ->sum('amount');
 
-        // Hitung persentase pertumbuhan
         $weeklyGrowthPercent = null;
 
         if ($lastWeekIncome > 0) {
@@ -73,6 +65,8 @@ class DashboardController extends Controller
             );
         }
 
+
+        // RESPONSE EXISTING + 1 FIELD BARU
         return $this->successResponse('Dashboard retrieved successfully.', [
             'user_data' => $user->only([
                 'id',
@@ -83,12 +77,7 @@ class DashboardController extends Controller
             'income' => $income,
             'expense' => $expense,
             'weekly_growth_percent' => $weeklyGrowthPercent,
-            'recent_transactions' => $user->transactions()
-                ->with('category')
-                ->latest('transaction_date')
-                ->latest('id')
-                ->limit(4)
-                ->get(),
+            'recent_transactions' => $user->transactions()->with('category')->latest('transaction_date')->latest('id')->limit(5)->get(),
             'monthly_summary' => $monthly,
         ]);
     }
