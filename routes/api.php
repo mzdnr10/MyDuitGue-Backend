@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/system-status', [SystemStatusController::class, 'index']);
 Route::get('/health', [SystemStatusController::class, 'index']);
+
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/gettoken', [AuthController::class, 'getToken']);
 Route::post('/gettoken/client', [AuthController::class, 'getClientToken']);
@@ -25,7 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:user,staff,admin')->group(function () {
         Route::apiResource('transactions', TransactionController::class);
         Route::apiResource('categories', CategoryController::class);
-        Route::get('/dashboard', [DashboardController::class, 'index']);
+        Route::post('/dashboard', [DashboardController::class, 'index']);
         Route::get('/statistics', [StatisticsController::class, 'index']);
         Route::get('/transactions/{transaction}/payment-proofs', [PaymentProofController::class, 'index']);
         Route::post('/transactions/{transaction}/payment-proofs', [PaymentProofController::class, 'store']);
