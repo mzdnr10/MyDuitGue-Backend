@@ -77,7 +77,7 @@ class DashboardController extends Controller
             'income' => $income,
             'expense' => $expense,
             'weekly_growth_percent' => $weeklyGrowthPercent,
-            'recent_transactions' => $user->transactions()->with('category')->latest('transaction_date')->latest('id')->limit(5)->get(),
+            'recent_transactions' => $user->transactions()->with('category')->latest('transaction_date')->latest('id')->limit(10)->get(),
             'monthly_summary' => $monthly,
         ]);
     }
