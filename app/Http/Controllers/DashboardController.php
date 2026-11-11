@@ -32,41 +32,6 @@ class DashboardController extends Controller
                 'expense' => $items->where('type', 'expense')->sum('amount'),
             ])->values();
 
-
-        // TAMBAHAN - WEEKLY GROWTH
-        $thisWeekStart = Carbon::now()->startOfWeek(Carbon::MONDAY);
-        $thisWeekEnd = Carbon::now()->endOfWeek(Carbon::SUNDAY);
-
-        $lastWeekStart = $thisWeekStart->copy()->subWeek();
-        $lastWeekEnd = $thisWeekEnd->copy()->subWeek();
-
-        $thisWeekIncome = $user->transactions()
-            ->where('type', 'income')
-            ->whereBetween('transaction_date', [
-                $thisWeekStart->toDateString(),
-                $thisWeekEnd->toDateString()
-            ])
-            ->sum('amount');
-
-        $lastWeekIncome = $user->transactions()
-            ->where('type', 'income')
-            ->whereBetween('transaction_date', [
-                $lastWeekStart->toDateString(),
-                $lastWeekEnd->toDateString()
-            ])
-            ->sum('amount');
-
-        $weeklyGrowthPercent = null;
-
-        if ($lastWeekIncome > 0) {
-            $weeklyGrowthPercent = round(
-                (($thisWeekIncome - $lastWeekIncome) / $lastWeekIncome) * 100,
-                2
-            );
-        }
-
-
-        // RESPONSE EXISTING + 1 FIELD BARU
         return $this->successResponse('Dashboard retrieved successfully.', [
             'user_data' => $user->only([
                 'id',
@@ -76,8 +41,7 @@ class DashboardController extends Controller
             'balance' => $income - $expense,
             'income' => $income,
             'expense' => $expense,
-            'weekly_growth_percent' => $weeklyGrowthPercent,
-            'recent_transactions' => $user->transactions()->with('category')->latest('transaction_date')->latest('id')->limit(10)->get(),
+            'recent_transactions' => $user->transactions()->with('category')->latest('transaction_date')->latest('id')->limit(5)->get(),
             'monthly_summary' => $monthly,
         ]);
     }
