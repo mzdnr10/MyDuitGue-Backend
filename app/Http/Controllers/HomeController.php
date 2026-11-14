@@ -40,13 +40,19 @@ class HomeController extends Controller
         $income = $transactions->where('type', 'income')->sum('amount');
         $expense = $transactions->where('type', 'expense')->sum('amount');
 
+        $balance->prepend([
+            'account_id' => 0,
+            'account_name' => 'SEMUA',
+            'income' => $income,
+            'expense' => $expense,
+            'balance' => $income - $expense
+        ]);
+
         return $this->successResponse('Home retrieved successfully.', [
             'user_data' => $user->only([
                 'name'
             ]),
             'balance' => $balance,
-            'income' => $income,
-            'expense' => $expense,
             'recent_transactions' => $user->transactions()
                 ->with('category')
                 ->latest('transaction_date')
