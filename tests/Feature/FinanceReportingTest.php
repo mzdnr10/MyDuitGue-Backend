@@ -13,7 +13,7 @@ class FinanceReportingTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_user_can_read_dashboard_and_statistics_for_owned_transactions(): void
+    public function test_user_can_read_home_and_statistics_for_owned_transactions(): void
     {
         $user = User::factory()->create();
         $category = Category::create(['name' => 'Food', 'type' => 'expense', 'is_system' => true]);
@@ -22,7 +22,7 @@ class FinanceReportingTest extends TestCase
             ['category_id' => $category->id, 'title' => 'Lunch', 'amount' => 25000, 'type' => 'expense', 'transaction_date' => '2026-09-02'],
         ]);
 
-        $this->actingAs($user, 'sanctum')->getJson('/api/dashboard')
+        $this->actingAs($user, 'sanctum')->getJson('/api/home')
             ->assertOk()
             ->assertJsonPath('data.balance', 4975000)
             ->assertJsonPath('data.income', 5000000)
@@ -67,5 +67,8 @@ class FinanceReportingTest extends TestCase
 
         $this->actingAs($user, 'sanctum')->getJson('/api/backoffice/users')->assertForbidden();
         $this->actingAs($staff, 'sanctum')->getJson('/api/backoffice/users')->assertOk();
+        $this->actingAs($staff, 'sanctum')->getJson('/api/backoffice/home')
+            ->assertOk()
+            ->assertJsonStructure(['data' => ['users', 'transactions', 'income', 'expense']]);
     }
 }

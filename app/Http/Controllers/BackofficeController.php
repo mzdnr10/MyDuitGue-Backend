@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Transaction;
 use App\Models\User;
-use Illuminate\Http\Request;
 
 class BackofficeController extends Controller
 {
@@ -24,9 +23,9 @@ class BackofficeController extends Controller
         return $this->successResponse('Categories retrieved successfully.', Category::with('user')->orderBy('name')->paginate(25));
     }
 
-    public function dashboard(Request $request)
+    public function home()
     {
-        return $this->successResponse('Backoffice dashboard retrieved successfully.', [
+        return $this->successResponse('Backoffice home retrieved successfully.', [
             'users' => User::count(),
             'transactions' => Transaction::count(),
             'income' => Transaction::where('type', 'income')->sum('amount'),

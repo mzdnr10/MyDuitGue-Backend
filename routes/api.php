@@ -3,7 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BackofficeController;
 use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PaymentProofController;
 use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\SystemStatusController;
@@ -34,7 +34,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:user,staff,admin')->group(function () {
         Route::apiResource('transactions', TransactionController::class);
         Route::apiResource('categories', CategoryController::class);
-        Route::post('/dashboard', [DashboardController::class, 'index']);
+        Route::match(['get', 'post'], '/home', [HomeController::class, 'index']);
         Route::get('/statistics', [StatisticsController::class, 'index']);
         Route::get('/transactions/{transaction}/payment-proofs', [PaymentProofController::class, 'index']);
         Route::post('/transactions/{transaction}/payment-proofs', [PaymentProofController::class, 'store']);
@@ -43,6 +43,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users', [BackofficeController::class, 'users']);
         Route::get('/transactions', [BackofficeController::class, 'transactions']);
         Route::get('/categories', [BackofficeController::class, 'categories']);
-        Route::get('/dashboard', [BackofficeController::class, 'dashboard']);
+        Route::get('/home', [BackofficeController::class, 'home']);
     });
 });
