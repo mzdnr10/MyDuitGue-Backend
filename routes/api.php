@@ -31,18 +31,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/me', [AuthController::class, 'me']);
     Route::get('/profile', [AuthController::class, 'me']);
     Route::match(['put', 'patch'], '/profile', [AuthController::class, 'updateProfile']);
-    Route::middleware('role:user,staff,admin')->group(function () {
-        Route::apiResource('transactions', TransactionController::class);
-        Route::apiResource('categories', CategoryController::class);
-        Route::match(['get', 'post'], '/home', [HomeController::class, 'index']);
-        Route::get('/statistics', [StatisticsController::class, 'index']);
-        Route::get('/transactions/{transaction}/payment-proofs', [PaymentProofController::class, 'index']);
-        Route::post('/transactions/{transaction}/payment-proofs', [PaymentProofController::class, 'store']);
-    });
-    Route::prefix('backoffice')->middleware('role:staff,admin')->group(function () {
-        Route::get('/users', [BackofficeController::class, 'users']);
-        Route::get('/transactions', [BackofficeController::class, 'transactions']);
-        Route::get('/categories', [BackofficeController::class, 'categories']);
-        Route::get('/home', [BackofficeController::class, 'home']);
+    Route::middleware('role:user')->group(function () {
+        Route::post('/home', [HomeController::class, 'index']);
+        Route::post('/home/weekly_expense', [HomeController::class, 'weekly_expense']);
     });
 });

@@ -57,4 +57,23 @@ class HomeController extends Controller
                 ->get(),
         ]);
     }
+
+    public function weekly_expense(Request $request)
+    {
+        $startDate = now()->subDays(6)->startOfDay();
+        $endDate = now()->endOfDay();
+        
+        $user = $request->user();
+
+        $transactions = $user->transactions()
+            ->selectRaw('DATE(transaction_date) as date')
+            ->selectRaw('SUM(amount) as expense')
+            ->where('type', 'expense')
+            ->whereBetween('transaction_date', [$startDate, $endDate])
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+        
+        return $this->successResponse('Berhasil', $transactions);
+    }
 }
