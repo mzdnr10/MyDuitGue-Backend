@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class HomeController extends Controller
 {
@@ -12,35 +12,31 @@ class HomeController extends Controller
     {
         $user = $request->user();
 
-        $transactions = $user->transactions()
-            ->join('accounts', 'transactions.account_id', '=', 'accounts.id')
-            ->get([
-                'transactions.amount',
-                'transactions.type',
-                'transactions.transaction_date',
-                'transactions.account_id',
-                'accounts.name as account_name'
-            ]);
+        $accounts = DB::table('accounts')
+            ->leftJoin('transactions', function ($join) use ($user) {
+                $join->on('accounts.id', '=', 'transactions.account_id')
+                    ->where('transactions.user_id', $user->id);
+            })
+            ->select(
+                'accounts.id as account_id',
+                'accounts.name as account_name',
+                DB::raw("COALESCE(SUM(CASE WHEN transactions.type = 'income' THEN transactions.amount ELSE 0 END), 0) as income"),
+                DB::raw("COALESCE(SUM(CASE WHEN transactions.type = 'expense' THEN transactions.amount ELSE 0 END), 0) as expense")
+            )
+            ->groupBy('accounts.id', 'accounts.name')
+            ->get()
+            ->map(function ($account) {
+                $account->income = (int) $account->income;
+                $account->expense = (int) $account->expense;
+                $account->balance = $account->income - $account->expense;
 
-        $balance = $transactions->groupBy('account_id')
-            ->map(function ($items) {
+                return $account;
+            });
 
-                $income = $items->where('type', 'income')->sum('amount');
-                $expense = $items->where('type', 'expense')->sum('amount');
+        $income = $accounts->sum('income');
+        $expense = $accounts->sum('expense');
 
-                return [
-                    'account_id' => $items->first()->account_id,
-                    'account_name' => $items->first()->account_name,
-                    'income' => $income,
-                    'expense' => $expense,
-                    'balance' => $income - $expense
-                ];
-            })->values();
-
-        $income = $transactions->where('type', 'income')->sum('amount');
-        $expense = $transactions->where('type', 'expense')->sum('amount');
-
-        $balance->prepend([
+        $balance = $accounts->prepend((object) [
             'account_id' => 0,
             'account_name' => 'SEMUA',
             'income' => $income,
