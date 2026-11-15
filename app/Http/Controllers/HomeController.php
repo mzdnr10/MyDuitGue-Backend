@@ -58,12 +58,13 @@ class HomeController extends Controller
         ]);
     }
 
+    
     public function weekly_expense(Request $request)
     {
+        $user = $request->user();
+
         $startDate = now()->subDays(6)->startOfDay();
         $endDate = now()->endOfDay();
-        
-        $user = $request->user();
 
         $transactions = $user->transactions()
             ->selectRaw('DATE(transaction_date) as date')
@@ -72,8 +73,39 @@ class HomeController extends Controller
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->groupBy('date')
             ->orderBy('date')
-            ->get();
-        
-        return $this->successResponse('Berhasil', $transactions);
+            ->get()
+            ->keyBy('date');
+
+        $dailyExpenses = [];
+
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i)->toDateString();
+
+            $dailyExpenses[] = [
+                'date' => $date,
+                'day_name' => match (now()->subDays($i)->dayOfWeek) {
+                    0 => 'Min',
+                    1 => 'Sen',
+                    2 => 'Sel',
+                    3 => 'Rab',
+                    4 => 'Kam',
+                    5 => 'Jum',
+                    6 => 'Sab',
+                },
+                'expense' => (int) ($transactions[$date]->expense ?? 0)
+            ];
+        }
+
+        $totalExpense = collect($dailyExpenses)->sum('expense');
+
+        return $this->successResponse('Berhasil', [
+            'total_expense' => $totalExpense,
+            'period' => [
+                'start_date' => $startDate->toDateString(),
+                'end_date' => $endDate->toDateString()
+            ],
+            'daily_expenses' => $dailyExpenses
+        ]);
     }
+
 }
