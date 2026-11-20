@@ -36,7 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/home', [HomeController::class, 'index']);
         Route::post('/home/weekly_expense', [HomeController::class, 'weekly_expense']);
         Route::post('/service', [ServicesController::class, 'index']);
-        Route::post('/services/category', [ServicesController::class, 'categoryAndAccount']);
+        Route::post('/services/category-account', [ServicesController::class, 'categoryAndAccount']);
 
     });
 });
