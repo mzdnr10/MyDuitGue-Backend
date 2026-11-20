@@ -5,6 +5,7 @@ use App\Http\Controllers\BackofficeController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PaymentProofController;
+use App\Http\Controllers\ServicesController;
 use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\SystemStatusController;
 use App\Http\Controllers\TransactionController;
@@ -34,5 +35,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:user')->group(function () {
         Route::post('/home', [HomeController::class, 'index']);
         Route::post('/home/weekly_expense', [HomeController::class, 'weekly_expense']);
+        Route::post('/service', [ServicesController::class, 'index']);
+        Route::post('/services/category', [ServicesController::class, 'categoryAndAccount']);
+
     });
 });
