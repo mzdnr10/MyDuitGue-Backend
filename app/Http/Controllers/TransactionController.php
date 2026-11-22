@@ -2,12 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
 class TransactionController extends Controller
 {
@@ -36,9 +33,8 @@ class TransactionController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        
         $validated = $request->validate($this->rules());
-        $this->ensureCategoryCanBeUsed($request, $validated['category_id'] ?? null, $validated['type']);
-
         $transaction = $request->user()->transactions()->create($validated);
 
         return $this->successResponse('Transaction created successfully.', $transaction->load('category'), 201);
@@ -78,38 +74,12 @@ class TransactionController extends Controller
         $required = $partial ? ['sometimes', 'required'] : ['required'];
 
         return [
-            'title' => [...$required, 'string', 'max:255'],
+            'category_id' => [...$required, 'integer', 'exists:categories,id'],
             'amount' => [...$required, 'numeric', 'gt:0', 'max:9999999999999.99'],
             'type' => [...$required, Rule::in(['income', 'expense'])],
-            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'description' => ['sometimes', 'nullable', 'string'],
             'transaction_date' => [...$required, 'date'],
+            'account_id' => [...$required,'integer', 'exists:accounts,id'],
         ];
-    }
-
-    private function ensureCategoryCanBeUsed(Request $request, ?int $categoryId, string $transactionType): void
-    {
-        if ($categoryId === null) {
-            return;
-        }
-
-        $category = Category::query()
-            ->whereKey($categoryId)
-            ->where(function (Builder $query) use ($request) {
-                $query->whereNull('user_id')->orWhere('user_id', $request->user()->id);
-            })
-            ->first();
-
-        if (! $category) {
-            throw ValidationException::withMessages([
-                'category_id' => ['The selected category is unavailable.'],
-            ]);
-        }
-
-        if (! in_array($category->type, [$transactionType, 'both'], true)) {
-            throw ValidationException::withMessages([
-                'category_id' => ['The selected category does not support this transaction type.'],
-            ]);
-        }
     }
 }
