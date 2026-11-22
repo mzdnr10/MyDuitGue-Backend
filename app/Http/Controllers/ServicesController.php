@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Models\Category;
+use Illuminate\Http\Request;
 
 class ServicesController extends Controller
 {
-    public function categoryAndAccount()
+    public function categoryAndAccount(Request $request)
     {
-        $categories = Category::where('type', 'income')
+
+        $type = $request->input('type');
+        $categories = Category::where('type', $type)
             ->get(['id', 'name']);
         
         $accounts = Account::get(['id', 'name', 'type']);
