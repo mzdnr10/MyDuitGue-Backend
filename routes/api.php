@@ -1,12 +1,8 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\BackofficeController;
-use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\PaymentProofController;
 use App\Http\Controllers\ServicesController;
-use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\SystemStatusController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +34,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/service', [ServicesController::class, 'index']);
         Route::post('/services/category-account', [ServicesController::class, 'categoryAndAccount']);
         Route::post('/transaction/store', [TransactionController::class, 'store']);
+        Route::post('/transaction/history', [TransactionController::class, 'history']);
 
     });
 });

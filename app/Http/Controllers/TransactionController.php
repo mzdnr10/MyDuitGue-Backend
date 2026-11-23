@@ -8,27 +8,26 @@ use Illuminate\Validation\Rule;
 
 class TransactionController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function history(Request $request)
     {
-        $query = $request->user()->transactions()
+        $user = $request->user();
+
+        $transactions = $user->transactions()
             ->with('category')
-            ->orderByDesc('transaction_date')
-            ->orderByDesc('id');
+            ->latest('transaction_date')
+            ->latest('id')
+            ->paginate(10);
 
-        $query->when($request->filled('type'), fn($query) => $query->where('type', $request->string('type')));
-        $query->when($request->filled('category_id'), fn($query) => $query->where('category_id', $request->integer('category_id')));
-        $query->when($request->filled('from'), fn($query) => $query->whereDate('transaction_date', '>=', $request->date('from')));
-        $query->when($request->filled('to'), fn($query) => $query->whereDate('transaction_date', '<=', $request->date('to')));
-        $query->when($request->filled('search'), fn($query) => $query->where(function ($query) use ($request) {
-            $term = '%' . $request->string('search') . '%';
-            $query->where('title', 'like', $term)->orWhere('description', 'like', $term);
-        }));
-
-        $transactions = $request->filled('per_page')
-            ? $query->paginate(min($request->integer('per_page', 20), 100))->withQueryString()
-            : $query->get();
-
-        return $this->successResponse('Transactions retrieved successfully.', $transactions);
+        return $this->successResponse('Transaction history retrieved successfully.', [
+            'transactions' => $transactions->items(),
+            'pagination' => [
+                'current_page' => $transactions->currentPage(),
+                'last_page' => $transactions->lastPage(),
+                'per_page' => $transactions->perPage(),
+                'total' => $transactions->total(),
+                'has_more' => $transactions->hasMorePages(),
+            ],
+        ]);
     }
 
     public function store(Request $request): JsonResponse
