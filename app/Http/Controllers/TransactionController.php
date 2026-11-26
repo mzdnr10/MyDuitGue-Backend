@@ -14,6 +14,7 @@ class TransactionController extends Controller
 
         $transactions = $user->transactions()
             ->with('category')
+            ->with('account')
             ->latest('transaction_date')
             ->latest('id')
             ->paginate(10);
