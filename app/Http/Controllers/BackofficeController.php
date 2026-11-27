@@ -2,34 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
-use App\Models\Transaction;
-use App\Models\User;
+use App\Services\BackofficeService;
 
 class BackofficeController extends Controller
 {
+    public function __construct(private BackofficeService $backofficeService)
+    {
+    }
+
     public function users()
     {
-        return $this->successResponse('Users retrieved successfully.', User::query()->latest()->paginate(25));
+        return $this->successResponse('Users retrieved successfully.', $this->backofficeService->users());
     }
 
     public function transactions()
     {
-        return $this->successResponse('Transactions retrieved successfully.', Transaction::with(['user', 'category'])->latest('transaction_date')->paginate(25));
+        return $this->successResponse('Transactions retrieved successfully.', $this->backofficeService->transactions());
     }
 
     public function categories()
     {
-        return $this->successResponse('Categories retrieved successfully.', Category::with('user')->orderBy('name')->paginate(25));
+        return $this->successResponse('Categories retrieved successfully.', $this->backofficeService->categories());
     }
 
     public function home()
     {
-        return $this->successResponse('Backoffice home retrieved successfully.', [
-            'users' => User::count(),
-            'transactions' => Transaction::count(),
-            'income' => Transaction::where('type', 'income')->sum('amount'),
-            'expense' => Transaction::where('type', 'expense')->sum('amount'),
-        ]);
+        return $this->successResponse('Backoffice home retrieved successfully.', $this->backofficeService->summary());
     }
 }

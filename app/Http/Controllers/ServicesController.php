@@ -2,25 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Account;
-use App\Models\Category;
+use App\Services\ServiceCatalogService;
 use Illuminate\Http\Request;
 
 class ServicesController extends Controller
 {
+    public function __construct(private ServiceCatalogService $serviceCatalogService)
+    {
+    }
+
+    public function index(Request $request)
+    {
+        return $this->categoryAndAccount($request);
+    }
+
     public function categoryAndAccount(Request $request)
     {
-
-        $type = $request->input('type');
-        $categories = Category::where('type', $type)
-            ->get(['id', 'name']);
-        
-        $accounts = Account::get(['id', 'name', 'type']);
-        $data = [
-                'categories' => $categories,
-                'accounts' => $accounts
-            ];
-
-        return $this->successResponse('Services retrieved successfully.', $data, 201);
+        return $this->successResponse(
+            'Services retrieved successfully.',
+            $this->serviceCatalogService->categoriesAndAccounts(
+                $request->user(),
+                $request->input('type')
+            ),
+            201
+        );
     }
 }

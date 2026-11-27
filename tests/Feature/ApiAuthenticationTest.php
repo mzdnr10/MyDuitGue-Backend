@@ -69,6 +69,16 @@ class ApiAuthenticationTest extends TestCase
             ->assertUnauthorized();
     }
 
+    public function test_user_can_update_profile_with_post(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson('/api/profile/update', ['name' => 'Updated User'])
+            ->assertOk()
+            ->assertJsonPath('data.user.name', 'Updated User');
+    }
+
     public function test_machine_client_can_get_a_sanctum_token(): void
     {
         ApiClient::create([

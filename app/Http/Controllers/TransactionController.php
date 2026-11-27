@@ -2,71 +2,77 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\TransactionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class TransactionController extends Controller
 {
+    public function __construct(private TransactionService $transactionService)
+    {
+    }
+
     public function history(Request $request)
     {
-        $user = $request->user();
-
-        $transactions = $user->transactions()
-            ->with('category')
-            ->with('account')
-            ->latest('transaction_date')
-            ->latest('id')
-            ->paginate(10);
-
-        return $this->successResponse('Transaction history retrieved successfully.', [
-            'transactions' => $transactions->items(),
-            'pagination' => [
-                'current_page' => $transactions->currentPage(),
-                'last_page' => $transactions->lastPage(),
-                'per_page' => $transactions->perPage(),
-                'total' => $transactions->total(),
-                'has_more' => $transactions->hasMorePages(),
-            ],
-        ]);
+        return $this->successResponse(
+            'Transaction history retrieved successfully.',
+            $this->transactionService->history($request->user())
+        );
     }
 
     public function store(Request $request): JsonResponse
     {
-        
         $validated = $request->validate($this->rules());
-        $transaction = $request->user()->transactions()->create($validated);
+        $transaction = $this->transactionService->create($request->user(), $validated);
 
-        return $this->successResponse('Transaction created successfully.', $transaction->load('category'), 201);
+        return $this->successResponse(
+            'Transaction created successfully.',
+            $transaction->load('category'),
+            201
+        );
     }
 
     public function show(Request $request, int $transaction): JsonResponse
     {
-        $transaction = $request->user()->transactions()->with('category')->findOrFail($transaction);
-
-        return $this->successResponse('Transaction retrieved successfully.', $transaction);
+        return $this->successResponse(
+            'Transaction retrieved successfully.',
+            $this->transactionService->find($request->user(), $transaction)
+        );
     }
 
     public function update(Request $request, int $transaction): JsonResponse
     {
-        $transaction = $request->user()->transactions()->findOrFail($transaction);
         $validated = $request->validate($this->rules(true));
-        $categoryId = array_key_exists('category_id', $validated)
-            ? $validated['category_id']
-            : $transaction->category_id;
-        $type = $validated['type'] ?? $transaction->type;
-        $this->ensureCategoryCanBeUsed($request, $categoryId, $type);
 
-        $transaction->update($validated);
-
-        return $this->successResponse('Transaction updated successfully.', $transaction->load('category'));
+        return $this->successResponse(
+            'Transaction updated successfully.',
+            $this->transactionService->update($request->user(), $transaction, $validated)
+        );
     }
 
     public function destroy(Request $request, int $transaction): JsonResponse
     {
-        $request->user()->transactions()->findOrFail($transaction)->delete();
+        $this->transactionService->delete($request->user(), $transaction);
 
         return $this->successResponse('Transaction deleted successfully.');
+    }
+
+    public function transfer(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'from_account_id' => ['required', 'integer', 'exists:accounts,id'],
+            'to_account_id' => ['required', 'integer', 'exists:accounts,id', 'different:from_account_id'],
+            'amount' => ['required', 'numeric', 'gt:0', 'max:9999999999999.99'],
+            'description' => ['sometimes', 'nullable', 'string'],
+            'transaction_date' => ['required', 'date'],
+        ]);
+
+        return $this->successResponse(
+            'Transfer completed successfully.',
+            $this->transactionService->transfer($request->user(), $validated),
+            201
+        );
     }
 
     private function rules(bool $partial = false): array
@@ -75,11 +81,12 @@ class TransactionController extends Controller
 
         return [
             'category_id' => [...$required, 'integer', 'exists:categories,id'],
+            'title' => [...$required, 'string', 'max:255'],
             'amount' => [...$required, 'numeric', 'gt:0', 'max:9999999999999.99'],
             'type' => [...$required, Rule::in(['income', 'expense'])],
             'description' => ['sometimes', 'nullable', 'string'],
             'transaction_date' => [...$required, 'date'],
-            'account_id' => [...$required,'integer', 'exists:accounts,id'],
+            'account_id' => [...$required, 'integer', 'exists:accounts,id'],
         ];
     }
 }

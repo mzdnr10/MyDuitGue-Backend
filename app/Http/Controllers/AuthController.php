@@ -4,30 +4,29 @@ namespace App\Http\Controllers;
 
 use App\Models\ApiClient;
 use App\Models\User;
+use App\Services\AuthService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
 class AuthController extends Controller
 {
+    public function __construct(private AuthService $authService)
+    {
+    }
+
     public function register(Request $request)
     {
-
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
-        $user = User::create($validated);
-        $user->role = 'user';
-        $user->save();
-        $token = $user->createToken('android')->plainTextToken;
-
-        return $this->successResponse('Registration successful.', [
-            'user' => $user,
-            'token' => $token,
-        ], 201);
+        return $this->successResponse(
+            'Registration successful.',
+            $this->authService->register($validated),
+            201
+        );
     }
 
     public function getToken(Request $request)
@@ -36,10 +35,9 @@ class AuthController extends Controller
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
         ]);
+        $result = $this->authService->authenticateUser($validated);
 
-        $user = User::where('email', $validated['email'])->first();
-
-        if (! $user || ! $user->password || ! Hash::check($validated['password'], $user->password)) {
+        if ($result === null) {
             return $this->errorResponse(
                 'AUTH_001',
                 'The provided credentials are incorrect.',
@@ -47,10 +45,7 @@ class AuthController extends Controller
             );
         }
 
-        return $this->successResponse('Token generated successfully.', [
-            'user' => $user,
-            'token' => $user->createToken('android')->plainTextToken,
-        ]);
+        return $this->successResponse('Token generated successfully.', $result);
     }
 
     public function google(Request $request)
@@ -58,10 +53,9 @@ class AuthController extends Controller
         $validated = $request->validate([
             'id_token' => ['required', 'string'],
         ]);
+        $result = $this->authService->authenticateGoogle($validated['id_token']);
 
-        $clientId = config('services.google.client_id');
-
-        if (!$clientId) {
+        if (($result['error'] ?? null) === 'GOOGLE_503') {
             return $this->errorResponse(
                 'GOOGLE_503',
                 'Google authentication is not configured.',
@@ -69,25 +63,7 @@ class AuthController extends Controller
             );
         }
 
-        $googleClient = new \Google\Client([
-            'client_id' => config('services.google.client_id'),
-        ]);
-
-        // Verifikasi Google ID token
-        $payload = $googleClient->verifyIdToken(
-            $validated['id_token']
-        );
-
-        // Debug hasil verifikasi token
-        // echo '<pre>';
-        // print_r($payload);
-        // exit();
-
-        if (
-            !$payload ||
-            empty($payload['sub']) ||
-            empty($payload['email'])
-        ) {
+        if (($result['error'] ?? null) === 'GOOGLE_401') {
             return $this->errorResponse(
                 'GOOGLE_401',
                 'The Google ID token is invalid.',
@@ -95,35 +71,7 @@ class AuthController extends Controller
             );
         }
 
-        // Cari user berdasarkan Google ID atau email
-        $user = User::where('google_id', $payload['sub'])
-            ->orWhere('email', $payload['email'])
-            ->first();
-
-        if (!$user) {
-            $user = User::create([
-                'name' => $payload['name'] ?? $payload['email'],
-                'email' => $payload['email'],
-                'google_id' => $payload['sub'],
-                'avatar' => $payload['picture'] ?? null,
-                'email_verified_at' => now(),
-                'role' => 'user',
-            ]);
-        } else {
-            $user->forceFill([
-                'google_id' => $user->google_id ?: $payload['sub'],
-                'avatar' => $user->avatar ?: ($payload['picture'] ?? null),
-                'email_verified_at' => $user->email_verified_at ?: now(),
-            ])->save();
-        }
-
-        return $this->successResponse(
-            'Google authentication successful.',
-            [
-                'user' => $user,
-                'token' => $user->createToken('android')->plainTextToken,
-            ]
-        );
+        return $this->successResponse('Google authentication successful.', $result);
     }
 
     public function getClientToken(Request $request)
@@ -132,27 +80,20 @@ class AuthController extends Controller
             'client_id' => ['required', 'string'],
             'client_secret' => ['required', 'string'],
         ]);
+        $result = $this->authService->authenticateClient($validated);
 
-        $client = ApiClient::where('client_id', $validated['client_id'])
-            ->where('is_active', true)
-            ->first();
-
-        if (! $client || ! Hash::check($validated['client_secret'], $client->client_secret)) {
+        if ($result === null) {
             return $this->errorResponse('CLIENT_401', 'Invalid client credentials.', 401);
         }
 
-        return $this->successResponse('Machine token generated successfully.', [
-            'token' => $client->createToken('machine')->plainTextToken,
-            'token_type' => 'Bearer',
-        ]);
+        return $this->successResponse('Machine token generated successfully.', $result);
     }
 
     public function logout(Request $request)
     {
-        $token = $request->user()->currentAccessToken();
-
-        if ($token) {
-            $token->delete();
+        $principal = $request->user();
+        if ($principal instanceof User || $principal instanceof ApiClient) {
+            $this->authService->logout($principal);
         }
 
         return $this->successResponse('Logout successful.');
@@ -181,8 +122,8 @@ class AuthController extends Controller
             'email' => ['sometimes', 'required', 'email', 'max:255', Rule::unique('users')->ignore($request->user()->id)],
         ]);
 
-        $request->user()->update($validated);
-
-        return $this->successResponse('Profile updated successfully.', ['user' => $request->user()->fresh()]);
+        return $this->successResponse('Profile updated successfully.', [
+            'user' => $this->authService->updateProfile($request->user(), $validated),
+        ]);
     }
 }

@@ -26,6 +26,8 @@ Route::post('/auth/google', [AuthController::class, 'google']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/me', [AuthController::class, 'me']);
+    Route::post('/profile/update', [AuthController::class, 'updateProfile']);
+    Route::get('/me', [AuthController::class, 'me']);
     Route::get('/profile', [AuthController::class, 'me']);
     Route::match(['put', 'patch'], '/profile', [AuthController::class, 'updateProfile']);
     Route::middleware('role:user')->group(function () {
@@ -35,6 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/services/category-account', [ServicesController::class, 'categoryAndAccount']);
         Route::post('/transaction/store', [TransactionController::class, 'store']);
         Route::post('/transaction/history', [TransactionController::class, 'history']);
+        Route::post('/transaction/transfer', [TransactionController::class, 'transfer']);
 
     });
 });
