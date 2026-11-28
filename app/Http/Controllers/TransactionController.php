@@ -81,7 +81,7 @@ class TransactionController extends Controller
 
         return [
             'category_id' => [...$required, 'integer', 'exists:categories,id'],
-            'title' => [...$required, 'string', 'max:255'],
+            // 'title' => [...$required, 'string', 'max:255'],
             'amount' => [...$required, 'numeric', 'gt:0', 'max:9999999999999.99'],
             'type' => [...$required, Rule::in(['income', 'expense'])],
             'description' => ['sometimes', 'nullable', 'string'],
