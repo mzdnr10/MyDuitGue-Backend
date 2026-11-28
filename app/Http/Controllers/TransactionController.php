@@ -61,8 +61,8 @@ class TransactionController extends Controller
     public function transfer(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'from_account_id' => ['required', 'integer', 'exists:accounts,id'],
-            'to_account_id' => ['required', 'integer', 'exists:accounts,id', 'different:from_account_id'],
+            'from_accountid' => ['required', 'integer', 'exists:accounts,id'],
+            'to_accountid' => ['required', 'integer', 'exists:accounts,id', 'different:from_account_id'],
             'amount' => ['required', 'numeric', 'gt:0', 'max:9999999999999.99'],
             'description' => ['sometimes', 'nullable', 'string'],
             'transaction_date' => ['required', 'date'],
