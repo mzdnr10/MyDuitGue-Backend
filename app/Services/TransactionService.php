@@ -75,7 +75,7 @@ class TransactionService
             // Insert Expense
             $expenseTransaction = $user->transactions()->create($sharedAttributes + [
                 'type' => 'expense',
-                'account_id' => $attributes['from_account_id'],
+                'account_id' => $attributes['from_accountid'],
             ]);
 
             // Generate transfer ID berdasarkan ID transaksi Expense
@@ -89,7 +89,7 @@ class TransactionService
             // Insert Income dengan transfer_id yang sama
             $incomeTransaction = $user->transactions()->create($sharedAttributes + [
                 'type' => 'income',
-                'account_id' => $attributes['to_account_id'],
+                'account_id' => $attributes['to_accountid'],
                 'transfer_id' => $transferId,
             ]);
 
