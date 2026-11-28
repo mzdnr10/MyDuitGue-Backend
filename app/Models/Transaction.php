@@ -20,6 +20,7 @@ class Transaction extends Model
         'description',
         'transaction_date',
         'account_id',
+        'transfer_id',
     ];
 
     protected $casts = [

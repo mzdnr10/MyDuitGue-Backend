@@ -64,8 +64,6 @@ class TransactionService
     public function transfer(User $user, array $attributes): array
     {
         return DB::transaction(function () use ($user, $attributes): array {
-            $fromAccount = $user->accounts()->findOrFail($attributes['from_account_id']);
-            $toAccount = $user->accounts()->findOrFail($attributes['to_account_id']);
 
             $sharedAttributes = [
                 'category_id' => null,
@@ -77,7 +75,7 @@ class TransactionService
             // Insert Expense
             $expenseTransaction = $user->transactions()->create($sharedAttributes + [
                 'type' => 'expense',
-                'account_id' => $fromAccount->id,
+                'account_id' => $attributes['from_account_id'],
             ]);
 
             // Generate transfer ID berdasarkan ID transaksi Expense
@@ -91,7 +89,7 @@ class TransactionService
             // Insert Income dengan transfer_id yang sama
             $incomeTransaction = $user->transactions()->create($sharedAttributes + [
                 'type' => 'income',
-                'account_id' => $toAccount->id,
+                'account_id' => $attributes['to_account_id'],
                 'transfer_id' => $transferId,
             ]);
 
