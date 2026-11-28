@@ -74,13 +74,25 @@ class TransactionService
                 'transaction_date' => $attributes['transaction_date'],
             ];
 
+            // Insert Expense
             $expenseTransaction = $user->transactions()->create($sharedAttributes + [
                 'type' => 'expense',
                 'account_id' => $fromAccount->id,
             ]);
+
+            // Generate transfer ID berdasarkan ID transaksi Expense
+            $transferId = 'TRF' . $expenseTransaction->id;
+
+            // Update transfer_id pada Expense
+            $expenseTransaction->update([
+                'transfer_id' => $transferId,
+            ]);
+
+            // Insert Income dengan transfer_id yang sama
             $incomeTransaction = $user->transactions()->create($sharedAttributes + [
                 'type' => 'income',
                 'account_id' => $toAccount->id,
+                'transfer_id' => $transferId,
             ]);
 
             return [
